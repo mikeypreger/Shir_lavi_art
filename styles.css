@@ -2,7 +2,7 @@
   --ink: #3b3247;
   --ink-soft: #5f5569;
   --line: #e8e3ec;
-  --control-line: #7d7186; /* 3:1 or better against white, for form field edges */
+  --control-line: #7d7186; /* 3:1 or better against white, for button edges */
   --white: #ffffff;
   --rose: #f2bfc0;
   --blush: #f9e1df;
@@ -11,7 +11,6 @@
   --lilac: #e2dbf1;
   --lilac-deep: #cfc3e8;
   --mint: #d3eee6;
-  --error: #a8071a;
 
   --radius: 1rem;
   --font-display: "Fredoka", "Assistant", "Trebuchet MS", sans-serif;
@@ -66,18 +65,6 @@ p {
   height: 0;
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
 .skip-link {
   position: absolute;
   top: 0.75rem;
@@ -129,8 +116,7 @@ h1 {
   font-size: 1rem;
 }
 
-.site-actions,
-.form-actions {
+.site-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -150,11 +136,6 @@ h1 {
 
 .button:hover {
   background: var(--lilac);
-}
-
-.button:disabled {
-  opacity: 0.6;
-  cursor: progress;
 }
 
 .button-quiet {
@@ -290,36 +271,10 @@ button.card-media:focus-visible {
   overflow-wrap: anywhere;
 }
 
-.card-title:focus {
-  outline: none;
-  text-decoration: underline;
-}
-
 .card-description {
   color: var(--ink-soft);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-}
-
-.remove-button {
-  align-self: flex-start;
-  min-height: 2.75rem;
-  margin-top: auto;
-  margin-inline-start: -0.5rem;
-  padding: 0.35rem 0.5rem;
-  background: none;
-  color: var(--ink-soft);
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  border: 0;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.remove-button:hover {
-  color: var(--ink);
-  background: var(--lilac);
 }
 
 /* Footer: the mushrooms and the dwarf live here, out of the artwork's way. */
@@ -357,7 +312,7 @@ button.card-media:focus-visible {
 .tint-lilac { color: var(--lilac-deep); }
 .tint-sky { color: var(--sky); }
 
-/* Upload dialog */
+/* Dialogs */
 
 dialog {
   color: var(--ink);
@@ -368,108 +323,6 @@ dialog {
 
 dialog::backdrop {
   background: rgb(59 50 71 / 0.45);
-}
-
-.upload-dialog {
-  width: min(92vw, 34rem);
-  max-height: 92vh;
-  padding: clamp(1.25rem, 3vw, 2rem);
-  overflow-y: auto;
-}
-
-.upload {
-  display: grid;
-  gap: 1rem;
-}
-
-.upload h2 {
-  font-size: 1.75rem;
-}
-
-.field {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.field > label:not(.dropzone) {
-  font-weight: 700;
-}
-
-.optional {
-  color: var(--ink-soft);
-  font-weight: 400;
-}
-
-input[type="text"],
-textarea {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  border: 1px solid var(--control-line);
-  border-radius: 0.6rem;
-}
-
-textarea {
-  resize: vertical;
-}
-
-.dropzone {
-  display: grid;
-  justify-items: center;
-  padding: 1.5rem 1rem;
-  background: var(--sky);
-  text-align: center;
-  border: 2px dashed var(--control-line);
-  border-radius: 0.75rem;
-  cursor: pointer;
-}
-
-.dropzone:hover,
-.dropzone.is-dragging {
-  background: var(--mint);
-}
-
-.dropzone-title {
-  font-weight: 700;
-  overflow-wrap: anywhere;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-/* The real file input is hidden, so its focus ring is drawn on the dropzone. */
-.field:has(#file-input:focus-visible) .dropzone {
-  outline: 3px solid var(--ink);
-  outline-offset: 2px;
-}
-
-.error {
-  color: var(--error);
-  font-weight: 700;
-}
-
-.error:empty {
-  display: none;
-}
-
-.preview {
-  overflow: hidden;
-  background: var(--lilac);
-  border-radius: 0.75rem;
-}
-
-.preview img,
-.preview video {
-  display: block;
-  width: 100%;
-  max-height: 11rem;
-  object-fit: contain;
-}
-
-.storage-note {
-  color: var(--ink-soft);
-  font-size: 0.95rem;
 }
 
 /* Full-size image viewer */

@@ -1,9 +1,10 @@
 'use strict';
 
-const DB_NAME = 'shir-lavi-art';
-const STORE = 'works';
+const WORKS_FOLDER = 'works/';
 const COLOR_COUNT = 6; // matches the .card[data-color] rules in styles.css
 const LANG_KEY = 'shir-lavi-art-lang';
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'];
+const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v', 'ogv'];
 
 const STRINGS = {
   en: {
@@ -12,35 +13,15 @@ const STRINGS = {
     skip: 'Skip to the gallery',
     name: 'Shir Lavi',
     lede: 'Images and videos made for the interaction course',
-    add: 'Add a work',
     works: 'Works',
-    empty: 'Nothing here yet. Every work that gets added will appear here.',
-    storageBlocked: "This browser isn't allowing saved files, so works can't be added or shown here. Private browsing windows often block this.",
-    choose: 'Choose an image or video',
-    dropHint: 'or drag and drop it here',
-    titleLabel: 'Title',
-    descriptionLabel: 'Description',
-    optional: '(optional)',
-    storageNote: 'Works are saved in this browser, on this device.',
-    submit: 'Add to gallery',
-    saving: 'Saving…',
+    empty: 'Nothing here yet. Works will appear here soon.',
+    listError: "The list of works couldn't be loaded.",
     close: 'Close',
     image: 'Image',
     video: 'Video',
-    remove: 'Remove',
-    fallback_image: "This browser can't display this file format. Try JPG or PNG.",
-    fallback_video: "This browser can't display this file format. Try MP4.",
-    noFile: 'Please choose an image or video first.',
-    quota: 'There is not enough browser storage for this file. Try a smaller file or remove some works.',
-    saveFailed: 'Something went wrong saving this work. Please try again.',
+    fallback: "This work couldn't be displayed.",
     count: (n) => `${n} ${n === 1 ? 'work' : 'works'}`,
     viewFull: (title) => `View ${title} full size`,
-    removeLabel: (title) => `Remove ${title}`,
-    confirmRemove: (title) => `Remove "${title}" from the gallery? This can't be undone.`,
-    removed: (title) => `Removed ${title}.`,
-    removeFailed: (title) => `Couldn't remove ${title}. Please try again.`,
-    added: (title) => `Added ${title} to the gallery.`,
-    badType: (name) => `"${name}" isn't an image or video. Please choose a different file.`,
   },
   he: {
     pageTitle: 'שיר לביא | עבודות מקורס אינטראקציה',
@@ -48,65 +29,28 @@ const STRINGS = {
     skip: 'דילוג לגלריה',
     name: 'שיר לביא',
     lede: 'תמונות וסרטונים שנוצרו לקורס האינטראקציה',
-    add: 'הוספת עבודה',
     works: 'עבודות',
-    empty: 'עדיין אין כאן עבודות. כל עבודה שתתווסף תופיע כאן.',
-    storageBlocked: 'הדפדפן הזה לא מאפשר לשמור קבצים, ולכן אי אפשר להוסיף או להציג כאן עבודות. חלונות גלישה פרטית חוסמים זאת לעיתים קרובות.',
-    choose: 'בחירת תמונה או סרטון',
-    dropHint: 'או גרירה ושחרור לכאן',
-    titleLabel: 'כותרת',
-    descriptionLabel: 'תיאור',
-    optional: '(לא חובה)',
-    storageNote: 'העבודות נשמרות בדפדפן הזה, במכשיר הזה.',
-    submit: 'הוספה לגלריה',
-    saving: 'שמירה…',
+    empty: 'עדיין אין כאן עבודות. הן יופיעו כאן בקרוב.',
+    listError: 'לא ניתן היה לטעון את רשימת העבודות.',
     close: 'סגירה',
     image: 'תמונה',
     video: 'סרטון',
-    remove: 'הסרה',
-    fallback_image: 'הדפדפן הזה לא מצליח להציג את סוג הקובץ הזה. כדאי לנסות JPG או PNG.',
-    fallback_video: 'הדפדפן הזה לא מצליח להציג את סוג הקובץ הזה. כדאי לנסות MP4.',
-    noFile: 'יש לבחור קודם תמונה או סרטון.',
-    quota: 'אין מספיק מקום באחסון הדפדפן לקובץ הזה. אפשר לנסות קובץ קטן יותר או להסיר עבודות.',
-    saveFailed: 'משהו השתבש בשמירת העבודה. כדאי לנסות שוב.',
+    fallback: 'לא ניתן היה להציג את העבודה הזו.',
     count: (n) => (n === 1 ? 'עבודה אחת' : `${n} עבודות`),
     viewFull: (title) => `הצגת ${title} בגודל מלא`,
-    removeLabel: (title) => `הסרת ${title}`,
-    confirmRemove: (title) => `להסיר את "${title}" מהגלריה? אי אפשר לבטל את הפעולה.`,
-    removed: (title) => `העבודה ${title} הוסרה.`,
-    removeFailed: (title) => `לא ניתן להסיר את ${title}. כדאי לנסות שוב.`,
-    added: (title) => `העבודה ${title} נוספה לגלריה.`,
-    badType: (name) => `"${name}" אינו תמונה או סרטון. יש לבחור קובץ אחר.`,
   },
 };
 
-const form = document.getElementById('upload-form');
-const uploadDialog = document.getElementById('upload-dialog');
-const addButton = document.getElementById('add-button');
-const uploadClose = document.getElementById('upload-close');
 const langToggle = document.getElementById('lang-toggle');
-const fileInput = document.getElementById('file-input');
-const fileError = document.getElementById('file-error');
-const dropzone = document.getElementById('dropzone');
-const dropzoneTitle = document.getElementById('dropzone-title');
-const preview = document.getElementById('preview');
-const titleInput = document.getElementById('title-input');
-const descriptionInput = document.getElementById('description-input');
-const submitButton = document.getElementById('submit-button');
 const gallery = document.getElementById('gallery');
 const emptyState = document.getElementById('empty-state');
 const emptyMessage = document.getElementById('empty-message');
 const worksCount = document.getElementById('works-count');
-const worksHeading = document.getElementById('works-heading');
-const announcer = document.getElementById('announcer');
 const viewer = document.getElementById('viewer');
 const viewerImage = document.getElementById('viewer-image');
 const viewerCaption = document.getElementById('viewer-caption');
 
 let currentLang = 'en';
-let selectedFile = null;
-let previewUrl = null;
-let saving = false;
 
 /* Language */
 
@@ -150,59 +94,30 @@ function applyLanguage(lang) {
   langToggle.lang = other;
   langToggle.textContent = other === 'he' ? 'עברית' : 'English';
 
-  updateDropzone();
   [...gallery.children].forEach(labelCard);
   updateCount();
 }
 
-/* Storage */
-
-const dbReady = new Promise((resolve, reject) => {
-  const request = indexedDB.open(DB_NAME, 1);
-  request.onupgradeneeded = () => {
-    request.result.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
-  };
-  request.onsuccess = () => resolve(request.result);
-  request.onerror = () => reject(request.error);
-});
-
-async function withStore(mode, action) {
-  const db = await dbReady;
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE, mode);
-    const request = action(transaction.objectStore(STORE));
-    transaction.oncomplete = () => resolve(request.result);
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
-  });
-}
-
-const getAllWorks = () => withStore('readonly', (store) => store.getAll());
-const addWork = (work) => withStore('readwrite', (store) => store.add(work));
-const deleteWork = (id) => withStore('readwrite', (store) => store.delete(id));
-
 /* Rendering */
 
-function kindOf(type) {
-  if (type.startsWith('image/')) return 'image';
-  if (type.startsWith('video/')) return 'video';
+function kindOf(file) {
+  const extension = file.split('.').pop().toLowerCase();
+  if (IMAGE_EXTENSIONS.includes(extension)) return 'image';
+  if (VIDEO_EXTENSIONS.includes(extension)) return 'video';
   return null;
-}
-
-function announce(message) {
-  announcer.textContent = message;
 }
 
 function titleFromFilename(name) {
   return name.replace(/\.[^.]+$/, '');
 }
 
-// Files like HEIC or some MOVs pass the type check but won't decode in every browser.
+// A mistyped file name, or a format like HEIC that some browsers can't decode, ends up here.
 function createMedia(url, kind, { alt = '', label = '' } = {}) {
   const media = document.createElement(kind === 'image' ? 'img' : 'video');
   media.src = url;
   if (kind === 'image') {
     media.alt = alt;
+    media.loading = 'lazy';
   } else {
     media.controls = true;
     media.preload = 'metadata';
@@ -210,37 +125,41 @@ function createMedia(url, kind, { alt = '', label = '' } = {}) {
     if (label) media.setAttribute('aria-label', label);
   }
   media.addEventListener('error', () => {
+    console.warn(`Couldn't display ${url}. Check the file name in works.js.`);
     const fallback = document.createElement('p');
     fallback.className = 'media-fallback';
-    fallback.dataset.i18n = `fallback_${kind}`;
-    fallback.textContent = t(fallback.dataset.i18n);
-    media.replaceWith(fallback);
+    fallback.dataset.i18n = 'fallback';
+    fallback.textContent = t('fallback');
+    // Nothing to open full size any more, so the image's button goes too.
+    const wrap = media.parentElement;
+    const plainWrap = document.createElement('div');
+    plainWrap.className = wrap.className;
+    plainWrap.append(fallback);
+    wrap.replaceWith(plainWrap);
   });
   return media;
 }
 
-function createCard(work) {
-  const url = URL.createObjectURL(work.blob);
-  const kind = kindOf(work.type);
+function createCard(work, index) {
+  const url = WORKS_FOLDER + encodeURIComponent(work.file);
+  const kind = kindOf(work.file);
+  const title = work.title || titleFromFilename(work.file);
+  const alt = work.description || title;
 
   const card = document.createElement('li');
   card.className = 'card';
-  card.dataset.color = String(work.id % COLOR_COUNT);
-  card.dataset.title = work.title;
-
-  const description = work.description
-    ? Object.assign(document.createElement('p'), { className: 'card-description', dir: 'auto', textContent: work.description })
-    : null;
+  card.dataset.color = String(index % COLOR_COUNT);
+  card.dataset.title = title;
 
   let mediaWrap;
   if (kind === 'image') {
     mediaWrap = document.createElement('button');
     mediaWrap.type = 'button';
-    mediaWrap.addEventListener('click', () => openViewer(url, work));
-    mediaWrap.append(createMedia(url, kind, { alt: work.description || work.title }));
+    mediaWrap.addEventListener('click', () => openViewer(url, title, alt));
+    mediaWrap.append(createMedia(url, kind, { alt }));
   } else {
     mediaWrap = document.createElement('div');
-    mediaWrap.append(createMedia(url, kind, { label: work.title }));
+    mediaWrap.append(createMedia(url, kind, { label: title }));
   }
   mediaWrap.classList.add('card-media');
 
@@ -250,180 +169,52 @@ function createCard(work) {
   const badge = document.createElement('span');
   badge.className = 'card-type';
   badge.dataset.i18n = kind;
+  badge.textContent = t(kind);
 
   const heading = document.createElement('h3');
   heading.className = 'card-title';
   heading.dir = 'auto';
-  heading.tabIndex = -1;
-  heading.textContent = work.title;
-
-  const removeButton = document.createElement('button');
-  removeButton.type = 'button';
-  removeButton.className = 'remove-button';
-  removeButton.dataset.i18n = 'remove';
-  removeButton.addEventListener('click', () => removeWork(work, card, url));
+  heading.textContent = title;
 
   body.append(badge, heading);
-  if (description) body.append(description);
-  body.append(removeButton);
+  if (work.description) {
+    const description = document.createElement('p');
+    description.className = 'card-description';
+    description.dir = 'auto';
+    description.textContent = work.description.trim();
+    body.append(description);
+  }
   card.append(mediaWrap, body);
 
-  badge.textContent = t(kind);
-  removeButton.textContent = t('remove');
   labelCard(card);
   return card;
 }
 
-// Accessible names that include the work's title, redone on every language switch.
+// Accessible name that includes the work's title, redone on every language switch.
 function labelCard(card) {
-  const { title } = card.dataset;
-  card.querySelector('.remove-button').setAttribute('aria-label', t('removeLabel', title));
   const imageButton = card.querySelector('button.card-media');
-  if (imageButton) imageButton.setAttribute('aria-label', t('viewFull', title));
+  if (imageButton) imageButton.setAttribute('aria-label', t('viewFull', card.dataset.title));
 }
 
 function updateCount() {
   const count = gallery.children.length;
   worksCount.textContent = count ? t('count', count) : '';
-  // A storage error stays on screen, because no works can load behind it.
-  emptyState.hidden = count > 0 && emptyMessage.dataset.i18n === 'empty';
+  emptyState.hidden = count > 0;
 }
 
-function updateDropzone() {
-  dropzoneTitle.textContent = selectedFile ? selectedFile.name : t('choose');
-}
-
-function openViewer(url, work) {
+function openViewer(url, title, alt) {
   viewerImage.src = url;
-  viewerImage.alt = work.description || work.title;
-  viewerCaption.textContent = work.title;
+  viewerImage.alt = alt;
+  viewerCaption.textContent = title;
   viewer.showModal();
 }
 
 /* Actions */
 
-async function removeWork(work, card, url) {
-  if (!confirm(t('confirmRemove', work.title))) return;
-  try {
-    await deleteWork(work.id);
-  } catch (error) {
-    console.error(error);
-    announce(t('removeFailed', work.title));
-    return;
-  }
-  card.remove();
-  URL.revokeObjectURL(url);
-  updateCount();
-  worksHeading.focus();
-  announce(t('removed', work.title));
-}
-
-function clearPreview() {
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = null;
-  preview.replaceChildren();
-  preview.hidden = true;
-}
-
-function selectFile(file) {
-  fileError.textContent = '';
-  const kind = kindOf(file.type);
-  if (!kind) {
-    fileError.textContent = t('badType', file.name);
-    return;
-  }
-  selectedFile = file;
-  updateDropzone();
-  clearPreview();
-  previewUrl = URL.createObjectURL(file);
-  preview.append(createMedia(previewUrl, kind, { label: file.name }));
-  preview.hidden = false;
-}
-
-function resetForm() {
-  form.reset();
-  selectedFile = null;
-  fileError.textContent = '';
-  updateDropzone();
-  clearPreview();
-}
-
-function setSaving(isSaving) {
-  saving = isSaving;
-  submitButton.disabled = isSaving;
-  uploadClose.disabled = isSaving;
-  submitButton.textContent = t(isSaving ? 'saving' : 'submit');
-}
-
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  if (!selectedFile) {
-    fileError.textContent = t('noFile');
-    fileInput.focus();
-    return;
-  }
-
-  const work = {
-    title: titleInput.value.trim() || titleFromFilename(selectedFile.name),
-    description: descriptionInput.value.trim(),
-    type: selectedFile.type,
-    blob: selectedFile,
-    createdAt: Date.now(),
-  };
-
-  // Asks the browser not to clear saved works when the disk runs low.
-  navigator.storage?.persist?.().catch(() => {});
-
-  setSaving(true);
-  try {
-    work.id = await addWork(work);
-  } catch (error) {
-    console.error(error);
-    fileError.textContent = t(error && error.name === 'QuotaExceededError' ? 'quota' : 'saveFailed');
-    return;
-  } finally {
-    setSaving(false);
-  }
-
-  const card = createCard(work);
-  gallery.prepend(card);
-  updateCount();
-  uploadDialog.close();
-  card.querySelector('.card-title').focus({ preventScroll: true });
-  card.scrollIntoView({ block: 'center' });
-  announce(t('added', work.title));
-});
-
-fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) selectFile(fileInput.files[0]);
-  fileInput.value = ''; // lets the same file be chosen again after a reset
-});
-
-addButton.addEventListener('click', () => uploadDialog.showModal());
-uploadClose.addEventListener('click', () => uploadDialog.close());
-uploadDialog.addEventListener('close', resetForm);
-// Escape would hide a save that is still running, and with it any error it reports.
-uploadDialog.addEventListener('cancel', (event) => {
-  if (saving) event.preventDefault();
-});
-
 langToggle.addEventListener('click', () => {
   applyLanguage(langToggle.lang);
   saveLanguage();
 });
-
-// Handled on the whole page: dropping a file anywhere opens the upload form with it.
-document.addEventListener('dragover', (event) => event.preventDefault());
-document.addEventListener('drop', (event) => {
-  event.preventDefault();
-  dropzone.classList.remove('is-dragging');
-  const file = event.dataTransfer.files[0];
-  if (!file || viewer.open || saving) return;
-  if (!uploadDialog.open) uploadDialog.showModal();
-  selectFile(file);
-});
-dropzone.addEventListener('dragover', () => dropzone.classList.add('is-dragging'));
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-dragging'));
 
 document.getElementById('viewer-close').addEventListener('click', () => viewer.close());
 viewer.addEventListener('click', (event) => {
@@ -434,15 +225,16 @@ viewer.addEventListener('click', (event) => {
 
 applyLanguage(loadLanguage());
 
-getAllWorks()
-  .then((works) => {
-    works.reverse().forEach((work) => gallery.append(createCard(work)));
-    updateCount();
-  })
-  .catch((error) => {
-    console.error(error);
-    addButton.disabled = true;
-    emptyMessage.dataset.i18n = 'storageBlocked';
-    emptyMessage.textContent = t('storageBlocked');
-    updateCount();
+// WORKS comes from works.js. A typo there stops that file from loading, which leaves it undefined.
+if (typeof WORKS === 'undefined') {
+  emptyMessage.dataset.i18n = 'listError';
+  emptyMessage.textContent = t('listError');
+} else {
+  const works = WORKS.filter((work) => {
+    const usable = work && typeof work.file === 'string' && kindOf(work.file);
+    if (!usable) console.warn('Skipped an entry in works.js with a missing or unsupported file:', work);
+    return usable;
   });
+  works.forEach((work, index) => gallery.append(createCard(work, index)));
+  updateCount();
+}

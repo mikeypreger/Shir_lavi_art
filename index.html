@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <script src="works.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -54,7 +55,6 @@
     </div>
     <div class="site-actions">
       <button class="button button-quiet" type="button" id="lang-toggle"></button>
-      <button class="button" type="button" id="add-button" data-i18n="add"></button>
     </div>
   </header>
 
@@ -79,45 +79,11 @@
     </div>
   </footer>
 
-  <dialog class="upload-dialog" id="upload-dialog" aria-labelledby="upload-heading">
-    <form class="upload" id="upload-form" novalidate>
-      <h2 id="upload-heading" data-i18n="add"></h2>
-
-      <div class="field">
-        <label class="dropzone" id="dropzone" for="file-input">
-          <span class="dropzone-title" id="dropzone-title" role="status" dir="auto"></span>
-          <span class="dropzone-hint" data-i18n="dropHint"></span>
-        </label>
-        <input class="visually-hidden" type="file" id="file-input" accept="image/*,video/*" aria-describedby="file-error">
-        <p class="error" id="file-error" role="alert"></p>
-        <div class="preview" id="preview" hidden></div>
-      </div>
-
-      <div class="field">
-        <label for="title-input"><span data-i18n="titleLabel"></span> <span class="optional" data-i18n="optional"></span></label>
-        <input type="text" id="title-input" maxlength="120" dir="auto" autocomplete="off">
-      </div>
-
-      <div class="field">
-        <label for="description-input"><span data-i18n="descriptionLabel"></span> <span class="optional" data-i18n="optional"></span></label>
-        <textarea id="description-input" rows="4" dir="auto"></textarea>
-      </div>
-
-      <p class="storage-note" data-i18n="storageNote"></p>
-
-      <div class="form-actions">
-        <button class="button" type="submit" id="submit-button" data-i18n="submit"></button>
-        <button class="button button-quiet" type="button" id="upload-close" data-i18n="close"></button>
-      </div>
-    </form>
-  </dialog>
-
   <dialog class="viewer" id="viewer" aria-labelledby="viewer-caption">
     <button class="button button-quiet viewer-close" type="button" id="viewer-close" data-i18n="close"></button>
     <img id="viewer-image" alt="">
     <p class="viewer-caption" id="viewer-caption" dir="auto"></p>
   </dialog>
 
-  <div class="visually-hidden" id="announcer" role="status"></div>
 </body>
 </html>
