@@ -14,5 +14,9 @@
 // Only "file" is required, and it must match the file's name in the works folder exactly.
 
 const WORKS = [
-
+  {
+  file: תרגיל כיתתי 1,
+  title: תרגיל כיתתי ראשון,
+  description: התרגיל הראשון שביצענו יחד בכיתה, בו התבקשנו ליצור דף אינטרקטיבי שחברי הכיתה יתנסו בו, אשר ישיג מטרה שהגדרנו מראש(:,
+  },
 ];
