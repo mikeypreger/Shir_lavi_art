@@ -34,6 +34,20 @@ Tips:
 
 The site updates by itself, usually within a few minutes. If you don't see the work, refresh the page.
 
+## Grouping several files into one work
+
+To show a video and photos of the same work on one card, upload all the files, then use `files` instead of `file`:
+
+```js
+{
+  files: [`blue-room.mp4`, `blue-room-detail.jpg`, `blue-room-side.jpg`],
+  title: `Blue room`,
+  description: `A sentence or two about the work.`,
+},
+```
+
+The first file shows large, with small thumbnails underneath to switch between them. They all share one title and description. Put a comma between the files, with `` ` `` marks around each one.
+
 ## Rules for the list
 
 - `file` must match the file's name exactly, including capital letters and the ending (`.jpg`).
@@ -45,7 +59,7 @@ The site updates by itself, usually within a few minutes. If you don't see the w
 ## If something goes wrong
 
 - **"The list of works couldn't be loaded":** there is a typo in `works.js`, usually a missing `` ` `` or comma. Check the last thing you changed.
-- **"This work couldn't be displayed":** the name in `file` doesn't match the uploaded file, or the browser can't play that format.
+- **"This work couldn't be displayed":** the name in `file` doesn't match the uploaded file, it's missing its ending (like `.mp4`), or the browser can't play that format. In a group, the thumbnail with a `!` is the file with the problem.
 
 ## Removing a work
 

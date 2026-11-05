@@ -250,6 +250,58 @@ button.card-media:focus-visible {
   text-align: center;
 }
 
+/* Thumbnails for a work with several files */
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem 0;
+}
+
+.thumb {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  padding: 0;
+  overflow: hidden;
+  background: var(--card-color);
+  border: 1px solid var(--control-line);
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+.thumb[aria-current="true"] {
+  border: 3px solid var(--ink);
+}
+
+.thumb img,
+.thumb video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.thumb-problem::after {
+  content: "!";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.thumb-video::after {
+  content: "▶";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(59 50 71 / 0.4);
+  color: var(--white);
+}
+
 .card-body {
   display: flex;
   flex: 1;

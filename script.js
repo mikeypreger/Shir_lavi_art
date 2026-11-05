@@ -22,6 +22,9 @@ const STRINGS = {
     fallback: "This work couldn't be displayed.",
     count: (n) => `${n} ${n === 1 ? 'work' : 'works'}`,
     viewFull: (title) => `View ${title} full size`,
+    showItem: (n, total, kind) => `Show item ${n} of ${total}: ${kind}`,
+    problem: 'File problem',
+    untitled: 'Untitled',
   },
   he: {
     pageTitle: 'שיר לביא | עבודות מקורס אינטראקציה',
@@ -38,6 +41,9 @@ const STRINGS = {
     fallback: 'לא ניתן היה להציג את העבודה הזו.',
     count: (n) => (n === 1 ? 'עבודה אחת' : `${n} עבודות`),
     viewFull: (title) => `הצגת ${title} בגודל מלא`,
+    showItem: (n, total, kind) => `הצגת פריט ${n} מתוך ${total}: ${kind}`,
+    problem: 'בעיה בקובץ',
+    untitled: 'ללא כותרת',
   },
 };
 
@@ -51,6 +57,7 @@ const viewerImage = document.getElementById('viewer-image');
 const viewerCaption = document.getElementById('viewer-caption');
 
 let currentLang = 'en';
+let listLoaded = false;
 
 /* Language */
 
@@ -101,6 +108,7 @@ function applyLanguage(lang) {
 /* Rendering */
 
 function kindOf(file) {
+  if (typeof file !== 'string') return null;
   const extension = file.split('.').pop().toLowerCase();
   if (IMAGE_EXTENSIONS.includes(extension)) return 'image';
   if (VIDEO_EXTENSIONS.includes(extension)) return 'video';
@@ -109,6 +117,14 @@ function kindOf(file) {
 
 function titleFromFilename(name) {
   return name.replace(/\.[^.]+$/, '');
+}
+
+function createFallback() {
+  const fallback = document.createElement('p');
+  fallback.className = 'media-fallback';
+  fallback.dataset.i18n = 'fallback';
+  fallback.textContent = t('fallback');
+  return fallback;
 }
 
 // A mistyped file name, or a format like HEIC that some browsers can't decode, ends up here.
@@ -126,33 +142,38 @@ function createMedia(url, kind, { alt = '', label = '' } = {}) {
   }
   media.addEventListener('error', () => {
     console.warn(`Couldn't display ${url}. Check the file name in works.js.`);
-    const fallback = document.createElement('p');
-    fallback.className = 'media-fallback';
-    fallback.dataset.i18n = 'fallback';
-    fallback.textContent = t('fallback');
     // Nothing to open full size any more, so the image's button goes too.
     const wrap = media.parentElement;
     const plainWrap = document.createElement('div');
     plainWrap.className = wrap.className;
-    plainWrap.append(fallback);
+    plainWrap.append(createFallback());
     wrap.replaceWith(plainWrap);
   });
   return media;
 }
 
-function createCard(work, index) {
-  const url = WORKS_FOLDER + encodeURIComponent(work.file);
-  const kind = kindOf(work.file);
-  const title = work.title || titleFromFilename(work.file);
-  const alt = work.description || title;
+function urlOf(file) {
+  return WORKS_FOLDER + encodeURIComponent(file);
+}
 
-  const card = document.createElement('li');
-  card.className = 'card';
-  card.dataset.color = String(index % COLOR_COUNT);
-  card.dataset.title = title;
+// An entry lists one file under "file" or several under "files".
+// Bad names are kept rather than dropped, so the card shows that something needs fixing.
+function filesOf(work) {
+  const listed = [].concat(work.files ?? work.file ?? []);
+  if (!listed.length || !listed.every(kindOf)) {
+    console.warn('An entry in works.js has a missing file name, or one without a supported ending like .jpg or .mp4:', work);
+  }
+  return listed;
+}
 
+function createMainMedia(file, title, alt) {
+  const kind = kindOf(file);
+  const url = kind && urlOf(file);
   let mediaWrap;
-  if (kind === 'image') {
+  if (!kind) {
+    mediaWrap = document.createElement('div');
+    mediaWrap.append(createFallback());
+  } else if (kind === 'image') {
     mediaWrap = document.createElement('button');
     mediaWrap.type = 'button';
     mediaWrap.addEventListener('click', () => openViewer(url, title, alt));
@@ -162,19 +183,68 @@ function createCard(work, index) {
     mediaWrap.append(createMedia(url, kind, { label: title }));
   }
   mediaWrap.classList.add('card-media');
+  return mediaWrap;
+}
+
+function createThumb(file, onSelect) {
+  const kind = kindOf(file);
+  const thumb = document.createElement('button');
+  thumb.type = 'button';
+  thumb.className = `thumb thumb-${kind ?? 'problem'}`;
+  thumb.dataset.kind = kind ?? 'problem';
+  thumb.addEventListener('click', onSelect);
+  if (!kind) return thumb;
+
+  const media = document.createElement(kind === 'image' ? 'img' : 'video');
+  if (kind === 'image') {
+    media.alt = ''; // the button's label already says what this is
+    media.loading = 'lazy';
+    media.src = urlOf(file);
+  } else {
+    media.muted = true;
+    media.preload = 'metadata';
+    media.playsInline = true;
+    media.src = `${urlOf(file)}#t=0.1`; // shows a frame from the video, not a blank box
+  }
+  thumb.append(media);
+  return thumb;
+}
+
+function createCard(work, files, index) {
+  const title = work.title || (typeof files[0] === 'string' ? titleFromFilename(files[0]) : '');
+  const alt = work.description || title;
+
+  const card = document.createElement('li');
+  card.className = 'card';
+  card.dataset.color = String(index % COLOR_COUNT);
+  card.dataset.title = title;
 
   const body = document.createElement('div');
   body.className = 'card-body';
 
   const badge = document.createElement('span');
   badge.className = 'card-type';
-  badge.dataset.i18n = kind;
-  badge.textContent = t(kind);
+
+  const showFile = (selected) => {
+    const kind = kindOf(files[selected]) ?? 'problem';
+    card.querySelector('.card-media').replaceWith(createMainMedia(files[selected], title, alt));
+    badge.dataset.i18n = kind;
+    badge.textContent = t(kind);
+    card.querySelectorAll('.thumb').forEach((thumb, i) => {
+      thumb.setAttribute('aria-current', String(i === selected));
+    });
+    labelCard(card);
+  };
 
   const heading = document.createElement('h3');
   heading.className = 'card-title';
   heading.dir = 'auto';
-  heading.textContent = title;
+  if (title) {
+    heading.textContent = title;
+  } else {
+    heading.dataset.i18n = 'untitled';
+    heading.textContent = t('untitled');
+  }
 
   body.append(badge, heading);
   if (work.description) {
@@ -184,22 +254,35 @@ function createCard(work, index) {
     description.textContent = work.description.trim();
     body.append(description);
   }
-  card.append(mediaWrap, body);
+  card.append(Object.assign(document.createElement('div'), { className: 'card-media' })); // filled by showFile
 
-  labelCard(card);
+  if (files.length > 1) {
+    const thumbs = document.createElement('div');
+    thumbs.className = 'thumbs';
+    files.forEach((file, i) => thumbs.append(createThumb(file, () => showFile(i))));
+    card.append(thumbs);
+  }
+  card.append(body);
+
+  showFile(0);
   return card;
 }
 
-// Accessible name that includes the work's title, redone on every language switch.
+// Accessible names built from the work's details, redone on every language switch.
 function labelCard(card) {
   const imageButton = card.querySelector('button.card-media');
   if (imageButton) imageButton.setAttribute('aria-label', t('viewFull', card.dataset.title));
+  const thumbs = card.querySelectorAll('.thumb');
+  thumbs.forEach((thumb, i) => {
+    thumb.setAttribute('aria-label', t('showItem', i + 1, thumbs.length, t(thumb.dataset.kind)));
+  });
 }
 
 function updateCount() {
   const count = gallery.children.length;
   worksCount.textContent = count ? t('count', count) : '';
-  emptyState.hidden = count > 0;
+  // Stays hidden until the list arrives, so "nothing here yet" doesn't flash first.
+  emptyState.hidden = !listLoaded || count > 0;
 }
 
 function openViewer(url, title, alt) {
@@ -223,18 +306,25 @@ viewer.addEventListener('click', (event) => {
 
 /* Startup */
 
-applyLanguage(loadLanguage());
-
-// WORKS comes from works.js. A typo there stops that file from loading, which leaves it undefined.
-if (typeof WORKS === 'undefined') {
-  emptyMessage.dataset.i18n = 'listError';
-  emptyMessage.textContent = t('listError');
-} else {
-  const works = WORKS.filter((work) => {
-    const usable = work && typeof work.file === 'string' && kindOf(work.file);
-    if (!usable) console.warn('Skipped an entry in works.js with a missing or unsupported file:', work);
-    return usable;
-  });
-  works.forEach((work, index) => gallery.append(createCard(work, index)));
+function showWorks() {
+  listLoaded = true;
+  // WORKS comes from works.js. A typo there stops that file from running, which leaves it undefined.
+  if (typeof WORKS === 'undefined') {
+    emptyMessage.dataset.i18n = 'listError';
+    emptyMessage.textContent = t('listError');
+  } else {
+    WORKS
+      .filter((work) => work && typeof work === 'object')
+      .forEach((work, index) => gallery.append(createCard(work, filesOf(work), index)));
+  }
   updateCount();
 }
+
+applyLanguage(loadLanguage());
+
+// A new address on every visit means the browser can't serve an old saved copy of the list.
+const listScript = document.createElement('script');
+listScript.src = `works.js?v=${Date.now()}`;
+listScript.addEventListener('load', showWorks);
+listScript.addEventListener('error', showWorks);
+document.head.append(listScript);
